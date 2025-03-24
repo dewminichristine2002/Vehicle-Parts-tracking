@@ -27,7 +27,8 @@
                 <td>{{ $invoice->date }}</td>
                 <td>{{ number_format($invoice->grand_total, 2) }}</td>
                 <td>
-                    <a href="{{ route('invoices.show', $invoice->invoice_no) }}">👁️ View</a>
+                    <a href="#" onclick="showInvoice('{{ $invoice->invoice_no }}')">👁️ View</a>
+
                     |
                     <a href="{{ route('invoices.download', $invoice->invoice_no) }}">⬇️ Download</a>
                 </td>
@@ -39,4 +40,35 @@
         @endforelse
     </tbody>
 </table>
+<!-- Modal for invoice preview -->
+<div id="invoiceModal" style="display:none; position:fixed; top:10%; left:10%; width:80%; height:80%; background:#fff; border:2px solid #000; padding:20px; overflow:auto; z-index:9999;">
+<div id="invoiceModalContent">Loading...</div>
+
+<br>
+<div style="margin-top: 10px;">
+    <button onclick="document.getElementById('invoiceModal').style.display='none'">Close</button>
+    <a id="downloadLink" href="#" target="_blank" style="margin-left: 10px;">
+        <button>Download PDF</button>
+    </a>
+</div>
+
+</div>
+
+<script>
+function showInvoice(invoiceNo) {
+    fetch(`/invoices/${invoiceNo}/preview`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('invoiceModalContent').innerHTML = html;
+            document.getElementById('downloadLink').href = `/invoices/${invoiceNo}/download`;
+            document.getElementById('invoiceModal').style.display = 'block';
+        })
+        .catch(error => {
+            console.error("Error loading invoice:", error);
+            alert("Failed to load invoice details.");
+        });
+}
+
+</script>
+
 @endsection

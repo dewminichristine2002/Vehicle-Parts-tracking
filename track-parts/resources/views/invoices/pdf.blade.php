@@ -60,7 +60,16 @@
     @endif
 
     <br>
-    <p><strong>Discount:</strong> {{ $invoice->discount }}%</p>
-    <p><strong>Grand Total:</strong> {{ number_format($invoice->grand_total, 2) }}</p>
+    @php
+    $partTotal = $invoice->soldParts->sum('total');
+    $otherTotal = $invoice->otherCosts->sum('price');
+    $grossTotal = $partTotal + $otherTotal;
+    $discountAmount = ($grossTotal * $invoice->discount) / 100;
+@endphp
+
+<p><strong>Discount:</strong> {{ $invoice->discount }}%</p>
+<p><strong>Discount Amount:</strong> {{ number_format($discountAmount, 2) }}</p>
+<p><strong>Grand Total:</strong> {{ number_format($invoice->grand_total, 2) }}</p>
+
 </body>
 </html>

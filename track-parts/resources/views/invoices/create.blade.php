@@ -50,7 +50,7 @@
     <button type="button" onclick="showConfirmation()">Submit Invoice</button>
 </form>
 
-<!-- ✅ Confirmation Popup -->
+<!-- Confirmation Popup -->
 <div id="confirmation-popup" style="display:none; position:fixed; top:10%; left:15%; width:70%; background:#fff; border:2px solid #000; padding:20px; z-index:9999;">
     <h3>Confirm Invoice Details</h3>
     <div id="confirmation-content"></div>
@@ -64,7 +64,10 @@
     const partsData = @json($parts);
     const vehicleParts = {};
     @foreach (\App\Models\VehiclePart::all() as $vp)
-        vehicleParts["{{ $vp->part_number }}"] = {{ $vp->unit_price }};
+        vehicleParts["{{ $vp->part_number }}"] = {
+            name: "{{ $vp->part_name }}",
+            price: {{ $vp->unit_price }}
+        };
     @endforeach
 
     let partIndex = 0;
@@ -77,13 +80,8 @@
         const row = document.createElement('tr');
 
         row.innerHTML = `
-            <td>
-                <select name="parts[${partIndex}][part_number]" onchange="updatePartRow(this)">
-                    <option value="">Select</option>
-                    ${partsData.map(part => `<option value="${part.part_number}">${part.part_number}</option>`).join('')}
-                </select>
-            </td>
-            <td><input type="text" name="parts[${partIndex}][part_name]" readonly></td>
+            <td><input list="partNumbers" class="part-number-input" name="parts[${partIndex}][part_number]" onchange="syncFromPartNumber(this)" required></td>
+            <td><input list="partNames" class="part-name-input" name="parts[${partIndex}][part_name]" onchange="syncFromPartName(this)" required></td>
             <td><input type="number" name="parts[${partIndex}][quantity]" min="1" value="1" onchange="calculateTotal(this)" required></td>
             <td><input type="number" name="parts[${partIndex}][unit_price]" step="0.01" readonly></td>
             <td><input type="number" name="parts[${partIndex}][total]" step="0.01" readonly></td>
@@ -94,14 +92,25 @@
         partIndex++;
     }
 
-    function updatePartRow(select) {
-        const row = select.closest('tr');
-        const partNumber = select.value;
-        const part = partsData.find(p => p.part_number === partNumber);
-
+    function syncFromPartNumber(input) {
+        const row = input.closest('tr');
+        const partNumber = input.value.trim();
+        const part = vehicleParts[partNumber];
         if (part) {
-            row.querySelector('input[name*="[part_name]"]').value = part.part_name;
-            row.querySelector('input[name*="[unit_price]"]').value = vehicleParts[partNumber] || 0;
+            row.querySelector('.part-name-input').value = part.name;
+            row.querySelector('input[name*="[unit_price]"]').value = part.price;
+            calculateTotal(row.querySelector('input[name*="[quantity]"]'));
+        }
+    }
+
+    function syncFromPartName(input) {
+        const row = input.closest('tr');
+        const partName = input.value.trim();
+        const match = Object.entries(vehicleParts).find(([num, data]) => data.name === partName);
+        if (match) {
+            const [partNumber, data] = match;
+            row.querySelector('.part-number-input').value = partNumber;
+            row.querySelector('input[name*="[unit_price]"]').value = data.price;
             calculateTotal(row.querySelector('input[name*="[quantity]"]'));
         }
     }
@@ -118,13 +127,11 @@
     function addCostRow() {
         const table = document.querySelector('#costs-table tbody');
         const row = document.createElement('tr');
-
         row.innerHTML = `
             <td><input type="text" name="other_costs[${costIndex}][description]" required></td>
             <td><input type="number" name="other_costs[${costIndex}][price]" step="0.01" min="0" value="0" onchange="calculateGrandTotal()" required></td>
             <td><button type="button" onclick="this.closest('tr').remove(); calculateGrandTotal();">Remove</button></td>
         `;
-
         table.appendChild(row);
         costIndex++;
     }
@@ -153,7 +160,6 @@
 
     function showConfirmation() {
         calculateGrandTotal();
-
         const content = document.getElementById('confirmation-content');
         const customer_name = document.getElementById('customer_name').value;
         const date = document.getElementById('date').value;
@@ -170,13 +176,13 @@
         });
         const discountAmount = ((partTotal + costTotal) * discount) / 100;
 
-        let html = `<p><strong>Invoice No (Auto-generated):</strong> ${generatedInvoiceNo}</p>`;
+        let html = `<p><strong>Invoice No:</strong> ${generatedInvoiceNo}</p>`;
         html += `<p><strong>Customer Name:</strong> ${customer_name}</p>`;
         html += `<p><strong>Date:</strong> ${date}</p>`;
         html += `<h4>Sold Parts:</h4><ul>`;
         document.querySelectorAll('#parts-table tbody tr').forEach(row => {
-            const pn = row.querySelector('select[name*="[part_number]"]')?.value || '';
-            const name = row.querySelector('input[name*="[part_name]"]')?.value || '';
+            const pn = row.querySelector('.part-number-input')?.value || '';
+            const name = row.querySelector('.part-name-input')?.value || '';
             const qty = row.querySelector('input[name*="[quantity]"]')?.value || '';
             const total = row.querySelector('input[name*="[total]"]')?.value || '';
             html += `<li>${pn} - ${name} | Qty: ${qty} | Total: ${total}</li>`;
@@ -210,5 +216,25 @@
         a.click();
         URL.revokeObjectURL(url);
     }
+
+    // ✅ Add this to auto-add one row on page load
+    window.onload = () => {
+    addPartRow();
+    addCostRow();
+};
 </script>
+
+<!-- Autocomplete lists -->
+<datalist id="partNumbers">
+    @foreach($parts as $part)
+        <option value="{{ $part->part_number }}">
+    @endforeach
+</datalist>
+
+<datalist id="partNames">
+    @foreach($parts as $part)
+        <option value="{{ $part->part_name }}">
+    @endforeach
+</datalist>
+
 @endsection

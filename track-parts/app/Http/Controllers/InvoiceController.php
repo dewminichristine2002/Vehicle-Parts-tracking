@@ -110,6 +110,12 @@ public function show($invoice_no)
     $invoice = Invoice::with(['soldParts', 'otherCosts'])->where('invoice_no', $invoice_no)->firstOrFail();
     return view('invoices.show', compact('invoice'));
 }
+public function preview($invoice_no)
+{
+    $invoice = Invoice::with(['soldParts', 'otherCosts'])->where('invoice_no', $invoice_no)->firstOrFail();
+    return view('invoices.preview', compact('invoice'));
+}
+
 
 
     

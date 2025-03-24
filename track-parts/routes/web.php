@@ -14,7 +14,10 @@ Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invo
 Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
 
 // Optional: view a single invoice
-Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+//Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+
+Route::get('/invoices/{invoice_no}/preview', [InvoiceController::class, 'preview']);
+
 
 // Optional: download invoice as PDF
 Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
