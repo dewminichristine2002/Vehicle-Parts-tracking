@@ -18,12 +18,8 @@ class InvoiceController extends Controller
         $parts = BatchPart::select('part_number', 'part_name')->distinct()->get();
         return view('invoices.create', compact('parts'));
     }
-
     public function store(Request $request)
     {
-        // 🧪 Remove this after debugging
-        // dd($request->all());
-    
         // ✅ Sanitize input first (clean up empty entries)
         $request->merge([
             'parts' => array_filter($request->parts ?? [], function ($item) {
@@ -34,30 +30,36 @@ class InvoiceController extends Controller
             }),
         ]);
     
-        // ✅ Validate after cleaning
+        // ✅ Validate cleaned input
         $request->validate([
             'invoice_no' => 'required|unique:invoices',
-            'customer_name' => 'required',
-            'discount' => 'required|numeric|min:0|max:100',
+            'customer_name' => 'required|string|max:255',
             'grand_total' => 'required|numeric|min:0',
             'date' => 'required|date',
             'parts' => 'required|array|min:1',
+            'parts.*.part_number' => 'required|string',
+            'parts.*.part_name' => 'required|string',
+            'parts.*.quantity' => 'required|numeric|min:1',
+            'parts.*.unit_price' => 'required|numeric|min:0',
+            'parts.*.discount' => 'nullable|numeric|min:0|max:100',
+            'parts.*.total' => 'required|numeric|min:0',
             'other_costs' => 'nullable|array',
+            'other_costs.*.description' => 'required|string',
+            'other_costs.*.price' => 'required|numeric|min:0',
         ]);
     
         DB::beginTransaction();
     
         try {
-            // 🔸 Save main invoice
+            // 🔸 Create invoice
             $invoice = Invoice::create([
                 'invoice_no' => $request->invoice_no,
                 'customer_name' => $request->customer_name,
-                'discount' => $request->discount,
                 'grand_total' => $request->grand_total,
                 'date' => $request->date,
             ]);
     
-            // 🔹 Save sold parts
+            // 🔹 Store sold parts
             foreach ($request->parts as $part) {
                 SoldPart::create([
                     'invoice_no' => $invoice->invoice_no,
@@ -65,19 +67,18 @@ class InvoiceController extends Controller
                     'part_name' => $part['part_name'],
                     'quantity' => $part['quantity'],
                     'unit_price' => $part['unit_price'],
+                    'discount' => $part['discount'] ?? 0,
                     'total' => $part['total'],
                 ]);
             }
     
-            // 🔹 Save other costs (if any)
-            if (!empty($request->other_costs)) {
-                foreach ($request->other_costs as $cost) {
-                    OtherCost::create([
-                        'invoice_no' => $invoice->invoice_no,
-                        'description' => $cost['description'],
-                        'price' => $cost['price'],
-                    ]);
-                }
+            // 🔹 Store other costs
+            foreach ($request->other_costs ?? [] as $cost) {
+                OtherCost::create([
+                    'invoice_no' => $invoice->invoice_no,
+                    'description' => $cost['description'],
+                    'price' => $cost['price'],
+                ]);
             }
     
             DB::commit();
@@ -87,7 +88,10 @@ class InvoiceController extends Controller
             DB::rollBack();
             return back()->with('error', 'Something went wrong: ' . $e->getMessage());
         }
+        
+        
     }
+    
     
     public function index()
     {

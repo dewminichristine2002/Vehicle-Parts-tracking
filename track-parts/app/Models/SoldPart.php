@@ -15,9 +15,11 @@ class SoldPart extends Model
         'part_name',
         'quantity',
         'unit_price',
+        'discount',        // ✅ Add this line
         'total',
         'invoice_no',
     ];
+    
 
     public function invoice(): BelongsTo
     {

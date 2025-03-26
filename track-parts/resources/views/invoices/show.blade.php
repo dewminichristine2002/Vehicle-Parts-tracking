@@ -5,7 +5,6 @@
 
     <p><strong>Customer:</strong> {{ $invoice->customer_name }}</p>
     <p><strong>Date:</strong> {{ $invoice->date }}</p>
-    <p><strong>Discount:</strong> {{ $invoice->discount }}%</p>
     <p><strong>Grand Total:</strong> Rs. {{ number_format($invoice->grand_total, 2) }}</p>
 
     <h4>Sold Parts</h4>
@@ -16,6 +15,7 @@
                 <th>Part Name</th>
                 <th>Qty</th>
                 <th>Unit Price</th>
+                <th>Discount (%)</th>
                 <th>Total</th>
             </tr>
         </thead>
@@ -25,30 +25,33 @@
                     <td>{{ $part->part_number }}</td>
                     <td>{{ $part->part_name }}</td>
                     <td>{{ $part->quantity }}</td>
-                    <td>{{ $part->unit_price }}</td>
-                    <td>{{ $part->total }}</td>
+                    <td>{{ number_format($part->unit_price, 2) }}</td>
+                    <td>{{ number_format($part->discount ?? 0, 2) }}</td>
+                    <td>{{ number_format($part->total, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
 
-    <h4>Other Costs</h4>
-    <table border="1" cellpadding="8">
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th>Price</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($invoice->otherCosts as $cost)
+    @if($invoice->otherCosts->count())
+        <h4>Other Costs</h4>
+        <table border="1" cellpadding="8">
+            <thead>
                 <tr>
-                    <td>{{ $cost->description }}</td>
-                    <td>{{ $cost->price }}</td>
+                    <th>Description</th>
+                    <th>Price</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($invoice->otherCosts as $cost)
+                    <tr>
+                        <td>{{ $cost->description }}</td>
+                        <td>{{ number_format($cost->price, 2) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
     <br>
     <a href="{{ route('invoices.download', $invoice->invoice_no) }}">📥 Download PDF</a>

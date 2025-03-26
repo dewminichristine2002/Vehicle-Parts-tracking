@@ -6,7 +6,12 @@
 <table border="1" cellpadding="4" cellspacing="0" width="100%">
     <thead>
         <tr>
-            <th>Part No</th><th>Name</th><th>Qty</th><th>Unit Price</th><th>Total</th>
+            <th>Part No</th>
+            <th>Name</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Discount (%)</th>
+            <th>Total</th>
         </tr>
     </thead>
     <tbody>
@@ -16,6 +21,7 @@
                 <td>{{ $part->part_name }}</td>
                 <td>{{ $part->quantity }}</td>
                 <td>{{ number_format($part->unit_price, 2) }}</td>
+                <td>{{ number_format($part->discount ?? 0, 2) }}</td>
                 <td>{{ number_format($part->total, 2) }}</td>
             </tr>
         @endforeach
@@ -31,5 +37,4 @@
     </ul>
 @endif
 
-<p><strong>Discount:</strong> {{ $invoice->discount }}%</p>
 <p><strong>Grand Total:</strong> Rs. {{ number_format($invoice->grand_total, 2) }}</p>
