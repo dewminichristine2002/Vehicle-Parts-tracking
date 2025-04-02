@@ -93,11 +93,35 @@ class InvoiceController extends Controller
     }
     
     
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = \App\Models\Invoice::orderByDesc('date')->get();
+        $query = Invoice::query();
+    
+        if ($request->filled('invoice_no')) {
+            $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
+        }
+    
+        if ($request->filled('date')) {
+            $query->whereDate('date', $request->date);
+        }
+    
+        $invoices = $query->orderByDesc('date')->get();
+        
+    
         return view('invoices.index', compact('invoices'));
     }
+
+    public function autocomplete(Request $request)
+{
+    $term = $request->get('term');
+    $results = Invoice::where('invoice_no', 'like', '%' . $term . '%')
+                      ->limit(10)
+                      ->pluck('invoice_no');
+
+    return response()->json($results);
+}
+
+    
 
    
 

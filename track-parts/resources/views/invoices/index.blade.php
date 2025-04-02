@@ -7,6 +7,18 @@
     <p style="color: green">{{ session('success') }}</p>
 @endif
 
+<form method="GET" action="{{ route('invoices.index') }}" style="margin-bottom: 20px;">
+
+<input type="text" name="invoice_no" id="invoiceSearch" placeholder="Search Invoice No" autocomplete="off">
+<div id="invoiceSuggestions" style="position: absolute; background: white; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; display: none;"></div>
+
+
+    <input type="date" name="date" value="{{ request('date') }}">
+    <button type="submit">Search</button>
+    <a href="{{ route('invoices.index') }}"><button type="button">Reset</button></a>
+</form>
+
+
 <table border="1" cellpadding="10" cellspacing="0" width="100%">
     <thead>
         <tr>
@@ -68,6 +80,42 @@ function showInvoice(invoiceNo) {
             alert("Failed to load invoice details.");
         });
 }
+
+
+document.getElementById('invoiceSearch').addEventListener('keyup', function () {
+    let query = this.value;
+
+    if (query.length < 1) {
+        document.getElementById('invoiceSuggestions').style.display = 'none';
+        return;
+    }
+
+    fetch(`/autocomplete-invoices?term=${query}`)
+        .then(res => res.json())
+        .then(data => {
+            let suggestionsBox = document.getElementById('invoiceSuggestions');
+            suggestionsBox.innerHTML = '';
+
+            if (data.length) {
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.textContent = item;
+                    div.style.padding = '5px';
+                    div.style.cursor = 'pointer';
+                    div.addEventListener('click', function () {
+                        document.getElementById('invoiceSearch').value = item;
+                        suggestionsBox.style.display = 'none';
+                    });
+                    suggestionsBox.appendChild(div);
+                });
+                suggestionsBox.style.display = 'block';
+            } else {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+});
+
+
 
 </script>
 
