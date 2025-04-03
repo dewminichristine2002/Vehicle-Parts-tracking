@@ -2,13 +2,13 @@
 
 @if(session('error'))
     <div style="background-color: #ffcccc; color: #a94442; padding: 10px; border: 1px solid red; margin-bottom: 15px;">
-        ❗ {{ session('error') }}
+         {{ session('error') }}
     </div>
 @endif
 
 @if(session('success'))
     <div style="background-color: #d4edda; color: #155724; padding: 10px; border: 1px solid #c3e6cb; margin-bottom: 15px;">
-        ✅ {{ session('success') }}
+        {{ session('success') }}
     </div>
 @endif
 
@@ -19,7 +19,21 @@
     @csrf
     <input type="hidden" name="invoice_no" id="invoice_no_hidden">
 
-    <input type="text" name="customer_name" id="customer_name" placeholder="Customer Name" required>
+
+
+<input type="text" name="contact_number" id="contact_number" placeholder="Contact Number" maxlength="10"
+       pattern="\d{10}" title="Enter exactly 10 digits"
+       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);" required autocomplete="off">
+
+    <div id="contactSuggestions" style="border: 1px solid #ccc; display: none;"></div>
+
+<input type="text" name="customer_name" id="customer_name" placeholder="Customer Name" required>
+
+<input type="text" name="vehicle_number" id="vehicle_number" placeholder="Vehicle Number" required autocomplete="off">
+<div id="vehicleSuggestions" style="border: 1px solid #ccc; display: none;"></div>
+
+
+
     <input type="date" name="date" id="date" required>
 
     <h4>Sold Parts</h4>
@@ -53,6 +67,8 @@
         <tbody></tbody>
     </table>
     <button type="button" onclick="addCostRow()">+ Add Cost</button>
+    <div id="otherCostSuggestions" style="position:absolute; background:white; border:1px solid #ccc; display:none; z-index:999;"></div>
+
 
     <br><br>
     <label>Grand Total:</label>
@@ -194,35 +210,85 @@ function calculateTotal(input) {
     }
 
     function showConfirmation() {
-        calculateGrandTotal();
-        const content = document.getElementById('confirmation-content');
-        const customer_name = document.getElementById('customer_name').value;
-        const date = document.getElementById('date').value;
-        const grand_total = parseFloat(document.getElementById('grand_total').value || 0);
+    calculateGrandTotal();
+    const content = document.getElementById('confirmation-content');
 
-        let html = `<p><strong>Invoice No:</strong> ${generatedInvoiceNo}</p>`;
-        html += `<p><strong>Customer Name:</strong> ${customer_name}</p>`;
-        html += `<p><strong>Date:</strong> ${date}</p>`;
-        html += `<h4>Sold Parts:</h4><ul>`;
-        document.querySelectorAll('#parts-table tbody tr').forEach(row => {
-            const pn = row.querySelector('.part-number-input')?.value || '';
-            const name = row.querySelector('.part-name-input')?.value || '';
-            const qty = row.querySelector('input[name*="[quantity]"]')?.value || '';
-            const discount = row.querySelector('input[name*="[discount]"]')?.value || '0';
-            const total = row.querySelector('input[name*="[total]"]')?.value || '';
-            html += `<li>${pn} - ${name} | Qty: ${qty} | Discount: ${discount}% | Total: ${total}</li>`;
-        });
-        html += `</ul><h4>Other Costs:</h4><ul>`;
-        document.querySelectorAll('#costs-table tbody tr').forEach(row => {
-            const desc = row.querySelector('input[name*="[description]"]')?.value || '';
-            const price = row.querySelector('input[name*="[price]"]')?.value || '';
-            html += `<li>${desc}: ${price}</li>`;
-        });
-        html += `</ul><p><strong>Grand Total:</strong> ${grand_total.toFixed(2)}</p>`;
+    const customer_name = document.getElementById('customer_name').value;
+    const contact_number = document.getElementById('contact_number').value;
+    const vehicle_number = document.getElementById('vehicle_number').value;
+    const date = document.getElementById('date').value;
+    const grand_total = parseFloat(document.getElementById('grand_total').value || 0);
 
-        content.innerHTML = html;
-        document.getElementById('confirmation-popup').style.display = 'block';
-    }
+    let html = `<p><strong>Invoice No:</strong> ${generatedInvoiceNo}</p>`;
+    html += `<p><strong>Customer Name:</strong> ${customer_name}</p>`;
+    html += `<p><strong>Contact Number:</strong> ${contact_number}</p>`;
+    html += `<p><strong>Vehicle Number:</strong> ${vehicle_number}</p>`;
+    html += `<p><strong>Date:</strong> ${date}</p>`;
+
+    // Sold Parts Table
+    html += `<h4>Sold Parts</h4>`;
+    html += `
+        <table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Part No</th>
+                    <th>Part Name</th>
+                    <th>Qty</th>
+                    <th>Discount (%)</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    document.querySelectorAll('#parts-table tbody tr').forEach(row => {
+        const pn = row.querySelector('.part-number-input')?.value || '';
+        const name = row.querySelector('.part-name-input')?.value || '';
+        const qty = row.querySelector('input[name*="[quantity]"]')?.value || '';
+        const discount = row.querySelector('input[name*="[discount]"]')?.value || '0';
+        const total = row.querySelector('input[name*="[total]"]')?.value || '';
+        html += `
+            <tr>
+                <td>${pn}</td>
+                <td>${name}</td>
+                <td>${qty}</td>
+                <td>${discount}%</td>
+                <td>${total}</td>
+            </tr>
+        `;
+    });
+    html += `</tbody></table>`;
+
+    // Other Costs Table
+    html += `<h4>Other Costs</h4>`;
+    html += `
+        <table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    document.querySelectorAll('#costs-table tbody tr').forEach(row => {
+        const desc = row.querySelector('input[name*="[description]"]')?.value || '';
+        const price = row.querySelector('input[name*="[price]"]')?.value || '';
+        html += `
+            <tr>
+                <td>${desc}</td>
+                <td>${price}</td>
+            </tr>
+        `;
+    });
+    html += `</tbody></table>`;
+
+    // Grand Total
+    html += `<p><strong>Grand Total:</strong> Rs. ${grand_total.toFixed(2)}</p>`;
+
+    content.innerHTML = html;
+    document.getElementById('confirmation-popup').style.display = 'block';
+}
+
 
     function hidePopup() {
         document.getElementById('confirmation-popup').style.display = 'none';
@@ -260,3 +326,152 @@ function calculateTotal(input) {
 </datalist>
 
 @endsection
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const contactInput = document.getElementById('contact_number');
+    const suggestionBox = document.getElementById('contactSuggestions');
+
+    contactInput.addEventListener('input', function () {
+        const query = this.value;
+        if (query.length >= 3) {
+            fetch(`/contacts/search?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionBox.innerHTML = '';
+                    if (data.length > 0) {
+                        suggestionBox.style.display = 'block';
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.textContent = item.contact_number + ' - ' + item.customer_name;
+                            div.style.padding = '5px';
+                            div.style.cursor = 'pointer';
+                            div.onclick = () => {
+                                contactInput.value = item.contact_number;
+                                document.getElementById('customer_name').value = item.customer_name;
+                                document.getElementById('vehicle_number').value = item.vehicle_number;
+                                suggestionBox.innerHTML = '';
+                                suggestionBox.style.display = 'none';
+                            };
+                            suggestionBox.appendChild(div);
+                        });
+                    } else {
+                        suggestionBox.style.display = 'none';
+                    }
+                });
+        } else {
+            suggestionBox.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!suggestionBox.contains(e.target) && e.target !== contactInput) {
+            suggestionBox.style.display = 'none';
+        }
+    });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const vehicleInput = document.getElementById('vehicle_number');
+    const vehicleBox = document.getElementById('vehicleSuggestions');
+
+    if (vehicleInput && vehicleBox) {
+        vehicleInput.addEventListener('input', function () {
+            const query = this.value;
+            if (query.length >= 2) {
+                fetch(`/vehicles/search?q=${query}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        vehicleBox.innerHTML = '';
+                        if (data.length > 0) {
+                            vehicleBox.style.display = 'block';
+                            data.forEach(item => {
+                                const div = document.createElement('div');
+                                div.textContent = item.vehicle_number + ' - ' + item.customer_name;
+                                div.style.padding = '5px';
+                                div.style.cursor = 'pointer';
+                                div.onclick = () => {
+                                    vehicleInput.value = item.vehicle_number;
+                                    document.getElementById('contact_number').value = item.contact_number;
+                                    document.getElementById('customer_name').value = item.customer_name;
+                                    vehicleBox.innerHTML = '';
+                                    vehicleBox.style.display = 'none';
+                                };
+                                vehicleBox.appendChild(div);
+                            });
+                        } else {
+                            vehicleBox.style.display = 'none';
+                        }
+                    });
+            } else {
+                vehicleBox.style.display = 'none';
+            }
+        });
+
+        // Hide suggestion box when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!vehicleBox.contains(e.target) && e.target !== vehicleInput) {
+                vehicleBox.style.display = 'none';
+            }
+        });
+    }
+});
+
+
+
+document.addEventListener('input', function(e) {
+    if (e.target.name.includes("other_costs") && e.target.name.includes("[description]")) {
+        const input = e.target;
+        const query = input.value;
+
+        if (query.length >= 2) {
+            fetch(`/other-costs/suggestions?q=${query}`)
+                .then(res => res.json())
+                .then(data => {
+                    const suggestionBox = document.getElementById('otherCostSuggestions');
+                    suggestionBox.innerHTML = '';
+                    if (data.length > 0) {
+                        const rect = input.getBoundingClientRect();
+                        suggestionBox.style.left = rect.left + 'px';
+                        suggestionBox.style.top = rect.bottom + window.scrollY + 'px';
+                        suggestionBox.style.width = input.offsetWidth + 'px';
+                        suggestionBox.style.display = 'block';
+
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.textContent = `${item.description} - Rs. ${item.price}`;
+                            div.style.padding = '5px';
+                            div.style.cursor = 'pointer';
+
+                            div.onclick = () => {
+                                input.value = item.description;
+                                const row = input.closest('tr');
+                                row.querySelector('input[name*="[price]"]').value = item.price;
+                                suggestionBox.style.display = 'none';
+                            };
+
+                            suggestionBox.appendChild(div);
+                        });
+                    } else {
+                        suggestionBox.style.display = 'none';
+                    }
+                });
+        } else {
+            document.getElementById('otherCostSuggestions').style.display = 'none';
+        }
+    }
+});
+
+// Hide suggestion box on click outside
+document.addEventListener('click', function(e) {
+    const box = document.getElementById('otherCostSuggestions');
+    if (!box.contains(e.target)) {
+        box.style.display = 'none';
+    }
+});
+
+
+
+</script>
+
+

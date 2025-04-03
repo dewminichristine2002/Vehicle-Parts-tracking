@@ -13,6 +13,8 @@
 <body>
     <h2>Invoice #{{ $invoice->invoice_no }}</h2>
     <p><strong>Customer:</strong> {{ $invoice->customer_name }}</p>
+    <p><strong>Contact Number:</strong> {{ $invoice->contact_number }}</p>
+    <p><strong>Vehicle Number:</strong> {{ $invoice->vehicle_number }}</p>
     <p><strong>Date:</strong> {{ $invoice->date }}</p>
 
     <h4>Sold Parts</h4>

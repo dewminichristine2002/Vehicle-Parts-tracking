@@ -1,5 +1,7 @@
 <h3>Invoice No: {{ $invoice->invoice_no }}</h3>
 <p><strong>Customer:</strong> {{ $invoice->customer_name }}</p>
+<p><strong>Contact Number:</strong> {{ $invoice->contact_number }}</p>
+<p><strong>Vehicle Number:</strong> {{ $invoice->vehicle_number }}</p>
 <p><strong>Date:</strong> {{ $invoice->date }}</p>
 
 <h4>Sold Parts</h4>

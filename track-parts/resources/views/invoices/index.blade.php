@@ -3,9 +3,6 @@
 @section('content')
 <h2>Invoices List</h2>
 
-@if (session('success'))
-    <p style="color: green">{{ session('success') }}</p>
-@endif
 
 <form method="GET" action="{{ route('invoices.index') }}" style="margin-bottom: 20px;">
 
@@ -118,5 +115,10 @@ document.getElementById('invoiceSearch').addEventListener('keyup', function () {
 
 
 </script>
+@if (session('success'))
+    <script>
+        alert("{{ session('success') }}");
+    </script>
+@endif
 
 @endsection

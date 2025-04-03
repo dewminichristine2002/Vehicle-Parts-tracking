@@ -10,6 +10,8 @@ use App\Models\BatchPart;
 use App\Models\VehiclePart;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Customer;
+use App\Models\CustomerVehicle;
 
 class InvoiceController extends Controller
 {
@@ -20,7 +22,7 @@ class InvoiceController extends Controller
     }
     public function store(Request $request)
     {
-        // ✅ Sanitize input first (clean up empty entries)
+        // ✅ Sanitize input first
         $request->merge([
             'parts' => array_filter($request->parts ?? [], function ($item) {
                 return isset($item['part_number'], $item['quantity']) && $item['quantity'] > 0;
@@ -30,10 +32,12 @@ class InvoiceController extends Controller
             }),
         ]);
     
-        // ✅ Validate cleaned input
+        // ✅ Validation
         $request->validate([
             'invoice_no' => 'required|unique:invoices',
+            'contact_number' => 'required|digits:10',
             'customer_name' => 'required|string|max:255',
+            'vehicle_number' => 'required|string|max:20',
             'grand_total' => 'required|numeric|min:0',
             'date' => 'required|date',
             'parts' => 'required|array|min:1',
@@ -51,12 +55,44 @@ class InvoiceController extends Controller
         DB::beginTransaction();
     
         try {
-            // 🔸 Create invoice
+            $existingCustomer = Customer::where('contact_number', $request->contact_number)->first();
+
+            if (!$existingCustomer) {
+                // Insert into customers table
+                Customer::create([
+                    'contact_number' => $request->contact_number,
+                    'customer_name' => $request->customer_name,
+                ]);
+            }
+    
+        // Find the vehicle by vehicle number, regardless of current owner
+            $existingVehicle = CustomerVehicle::where('vehicle_number', $request->vehicle_number)->first();
+
+            if ($existingVehicle) {
+            //  If this vehicle belongs to someone else, remove that old ownership
+                if ($existingVehicle->contact_number !== $request->contact_number) {
+                    $existingVehicle->delete();
+                 }
+             }
+
+        // Register or re-register vehicle to the current customer
+        CustomerVehicle::updateOrCreate(
+        [
+        'vehicle_number' => $request->vehicle_number,
+        'contact_number' => $request->contact_number,
+        ],
+    
+        );
+
+    
+            // 🔹 Create Invoice
             $invoice = Invoice::create([
-                'invoice_no' => $request->invoice_no,
-                'customer_name' => $request->customer_name,
-                'grand_total' => $request->grand_total,
-                'date' => $request->date,
+                'invoice_no'     => $request->invoice_no,
+                'customer_name'  => $request->customer_name,
+                'contact_number' => $request->contact_number,
+                'vehicle_number' => $request->vehicle_number,
+                'grand_total'    => $request->grand_total,
+                'date'           => $request->date,
             ]);
     
             // 🔹 Store sold parts
@@ -88,10 +124,8 @@ class InvoiceController extends Controller
             DB::rollBack();
             return back()->with('error', 'Something went wrong: ' . $e->getMessage());
         }
-        
-        
     }
-    
+     
     
     public function index(Request $request)
     {
@@ -120,8 +154,60 @@ class InvoiceController extends Controller
 
     return response()->json($results);
 }
+public function searchContacts(Request $request)
+{
+    $query = $request->query('q');
 
-    
+    $customers = Customer::where('contact_number', 'like', $query . '%')->get();
+
+    $results = [];
+
+    foreach ($customers as $customer) {
+        $vehicle = CustomerVehicle::where('contact_number', $customer->contact_number)->first();
+
+        $results[] = [
+            'contact_number' => $customer->contact_number,
+            'customer_name' => $customer->customer_name,
+            'vehicle_number' => $vehicle?->vehicle_number ?? '',
+        ];
+    }
+
+    return response()->json($results);
+}
+
+public function searchVehicle(Request $request)
+{
+    $query = $request->query('q');
+    $vehicles = CustomerVehicle::where('vehicle_number', 'like', $query . '%')->get();
+
+    $results = [];
+    foreach ($vehicles as $vehicle) {
+        $customer = Customer::where('contact_number', $vehicle->contact_number)->first();
+        $results[] = [
+            'vehicle_number' => $vehicle->vehicle_number,
+            'contact_number' => $vehicle->contact_number,
+            'customer_name' => $customer ? $customer->customer_name : '',
+        ];
+    }
+
+    return response()->json($results);
+}
+
+
+public function otherCostSuggestions(Request $request)
+{
+    $q = $request->q;
+
+    $suggestions = DB::table('other_costs')
+        ->where('description', 'like', "%$q%")
+        ->select('description', 'price')
+        ->distinct()
+        ->limit(10)
+        ->get();
+
+    return response()->json($suggestions);
+}
+
 
    
 

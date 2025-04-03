@@ -16,5 +16,20 @@
 
     @yield('content')
 
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        @if (session('success'))
+            alert("✅ {{ session('success') }}");
+        @elseif (session('error'))
+            alert("❗ {{ session('error') }}");
+        @endif
+    });
+</script>
+
+
+
 </body>
+
+
 </html>

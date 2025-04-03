@@ -4,6 +4,8 @@
     <h2>Invoice Details - {{ $invoice->invoice_no }}</h2>
 
     <p><strong>Customer:</strong> {{ $invoice->customer_name }}</p>
+    <p><strong>Contact Number:</strong> {{ $invoice->contact_number }}</p>
+    <p><strong>Vehicle Number:</strong> {{ $invoice->vehicle_number }}</p>
     <p><strong>Date:</strong> {{ $invoice->date }}</p>
     <p><strong>Grand Total:</strong> Rs. {{ number_format($invoice->grand_total, 2) }}</p>
 
