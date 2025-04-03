@@ -39,43 +39,7 @@
     </tbody>
 </table>
 
-<!-- Edit Modal -->
- <!--
-<div id="editModal" style="display:none; position:fixed; top:10%; left:25%; width:50%; background:#fff; border:2px solid #444; padding:20px; z-index:9999;">
-    <h3>Edit Customer</h3>
-    <form id="editForm" method="POST">
-        @csrf
-        @method('PUT')
-        <input type="hidden" id="edit_contact_number" name="contact_number">
 
-        <label>Contact Number:</label><br>
-        <input type="text" id="display_contact_number" disabled><br><br>
-
-        <label>Customer Name:</label><br>
-        <input type="text" name="customer_name" id="edit_customer_name" required><br><br>
-
-        <button type="submit">Save</button>
-        <button type="button" onclick="closeEditModal()">Cancel</button>
-    </form>
-</div> -->
-<!--<script>
-    function openEditModal(contactNumber) {
-        fetch(`/customers/${contactNumber}/edit`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('editForm').action = `/customers/${contactNumber}`;
-                document.getElementById('edit_contact_number').value = data.contact_number;
-                document.getElementById('display_contact_number').value = data.contact_number;
-                document.getElementById('edit_customer_name').value = data.customer_name;
-                document.getElementById('editModal').style.display = 'block';
-            });
-    }
-
-    function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
-    }
-</script>
--->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById('customer_search');
@@ -96,23 +60,23 @@ document.addEventListener("DOMContentLoaded", () => {
                             div.style.padding = '5px';
                             div.style.cursor = 'pointer';
 
-    div.onclick = () => {
-    searchInput.value = `${item.customer_name} (${item.contact_number})`;
-    suggestionBox.innerHTML = '';
-    suggestionBox.style.display = 'none';
+                            div.onclick = () => {
+                            searchInput.value = `${item.customer_name} (${item.contact_number})`;
+                            suggestionBox.innerHTML = '';
+                            suggestionBox.style.display = 'none';
 
-    const contactNumber = item.contact_number;
+                            const contactNumber = item.contact_number;
 
-    document.querySelectorAll('#customer-table tbody tr').forEach(row => {
-        const cellText = row.querySelector('td:nth-child(2)')?.textContent?.trim();
-        if (cellText === contactNumber) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    document.getElementById('resetBtn').style.display = 'inline-block';
-};
+                            document.querySelectorAll('#customer-table tbody tr').forEach(row => {
+                                const cellText = row.querySelector('td:nth-child(2)')?.textContent?.trim();
+                                if (cellText === contactNumber) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                            document.getElementById('resetBtn').style.display = 'inline-block';
+                        };
 
                             suggestionBox.appendChild(div);
                         });
@@ -153,4 +117,40 @@ function resetCustomerTable() {
 
 @endsection
 
+<!-- Edit Modal -->
+ <!--
+<div id="editModal" style="display:none; position:fixed; top:10%; left:25%; width:50%; background:#fff; border:2px solid #444; padding:20px; z-index:9999;">
+    <h3>Edit Customer</h3>
+    <form id="editForm" method="POST">
+        @csrf
+        @method('PUT')
+        <input type="hidden" id="edit_contact_number" name="contact_number">
 
+        <label>Contact Number:</label><br>
+        <input type="text" id="display_contact_number" disabled><br><br>
+
+        <label>Customer Name:</label><br>
+        <input type="text" name="customer_name" id="edit_customer_name" required><br><br>
+
+        <button type="submit">Save</button>
+        <button type="button" onclick="closeEditModal()">Cancel</button>
+    </form>
+</div> -->
+<!--<script>
+    function openEditModal(contactNumber) {
+        fetch(`/customers/${contactNumber}/edit`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editForm').action = `/customers/${contactNumber}`;
+                document.getElementById('edit_contact_number').value = data.contact_number;
+                document.getElementById('display_contact_number').value = data.contact_number;
+                document.getElementById('edit_customer_name').value = data.customer_name;
+                document.getElementById('editModal').style.display = 'block';
+            });
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+</script>
+-->
