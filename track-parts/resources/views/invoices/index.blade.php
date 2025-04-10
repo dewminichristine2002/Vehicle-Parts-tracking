@@ -115,10 +115,6 @@ document.getElementById('invoiceSearch').addEventListener('keyup', function () {
 
 
 </script>
-@if (session('success'))
-    <script>
-        alert("{{ session('success') }}");
-    </script>
-@endif
+
 
 @endsection

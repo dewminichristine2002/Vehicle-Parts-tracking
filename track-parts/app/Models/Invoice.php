@@ -21,6 +21,7 @@ class Invoice extends Model
         'discount',
         'grand_total',
         'date',
+        'dealer_id',
     ];
     
 
@@ -33,4 +34,10 @@ class Invoice extends Model
     {
         return $this->hasMany(OtherCost::class, 'invoice_no', 'invoice_no');
     }
+
+    public function dealer()
+{
+    return $this->belongsTo(Dealer::class);
+}
+
 }

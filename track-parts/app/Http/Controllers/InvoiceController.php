@@ -5,24 +5,42 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Invoice;
 use App\Models\SoldPart;
-use App\Models\OtherCost;
-use App\Models\BatchPart;
-use App\Models\VehiclePart;
+use App\Models\OtherCost;;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Customer;
 use App\Models\CustomerVehicle;
+use App\Models\DealerAuthController;
+use Illuminate\Support\Facades\Auth;
+use App\Models\GRNItem;
+use App\Models\GlobalPart;
+
 
 class InvoiceController extends Controller
 {
     public function create()
-    {
-        $parts = BatchPart::select('part_number', 'part_name')->distinct()->get();
-        return view('invoices.create', compact('parts'));
-    }
+{
+    $dealerId = Auth::id();  // current logged-in dealer’s ID
+
+    // Fetch distinct parts for this dealer from GRN items, joined with global parts info
+    $parts = \App\Models\GRNItem::where('dealer_id', $dealerId)
+          ->join('global_parts', 'grn_items.global_part_id', '=', 'global_parts.id')
+          ->select('global_parts.id', 'global_parts.part_number', 
+                   'global_parts.part_name', 'global_parts.price')
+          ->distinct()
+          ->get();
+
+    // Pass the parts collection to the Blade view
+    return view('invoices.create', compact('parts'));
+}
+
     public function store(Request $request)
     {
-        // ✅ Sanitize input first
+
+        $dealer = Auth::guard('dealer')->user();
+        $dealerId = $dealer->id;
+
+        // Sanitize input first
         $request->merge([
             'parts' => array_filter($request->parts ?? [], function ($item) {
                 return isset($item['part_number'], $item['quantity']) && $item['quantity'] > 0;
@@ -31,8 +49,10 @@ class InvoiceController extends Controller
                 return isset($item['description']) && $item['description'] !== '';
             }),
         ]);
+
     
-        // ✅ Validation
+    
+        // Validation
         $request->validate([
             'invoice_no' => 'required|unique:invoices',
             'contact_number' => 'required|digits:10',
@@ -62,6 +82,7 @@ class InvoiceController extends Controller
                 Customer::create([
                     'contact_number' => $request->contact_number,
                     'customer_name' => $request->customer_name,
+                    'dealer_id'      => $dealerId,
                 ]);
             }
     
@@ -84,7 +105,7 @@ class InvoiceController extends Controller
     
         );
 
-    
+            
             // 🔹 Create Invoice
             $invoice = Invoice::create([
                 'invoice_no'     => $request->invoice_no,
@@ -93,6 +114,7 @@ class InvoiceController extends Controller
                 'vehicle_number' => $request->vehicle_number,
                 'grand_total'    => $request->grand_total,
                 'date'           => $request->date,
+                'dealer_id'      => $dealerId,
             ]);
     
             // 🔹 Store sold parts
@@ -128,32 +150,41 @@ class InvoiceController extends Controller
      
     
     public function index(Request $request)
-    {
-        $query = Invoice::query();
-    
-        if ($request->filled('invoice_no')) {
-            $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
-        }
-    
-        if ($request->filled('date')) {
-            $query->whereDate('date', $request->date);
-        }
-    
-        $invoices = $query->orderByDesc('date')->get();
-        
-    
-        return view('invoices.index', compact('invoices'));
+{
+    $dealer = Auth::guard('dealer')->user(); // ✅ Get the logged-in dealer
+
+    if (!$dealer) {
+        return redirect()->route('login')->with('error', 'Unauthorized');
     }
 
-    public function autocomplete(Request $request)
+    $query = Invoice::where('dealer_id', $dealer->id); // ✅ Only dealer's invoices
+
+    if ($request->filled('invoice_no')) {
+        $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
+    }
+
+    if ($request->filled('date')) {
+        $query->whereDate('date', $request->date);
+    }
+
+    $invoices = $query->orderByDesc('date')->get();
+
+    return view('invoices.index', compact('invoices'));
+}
+
+
+public function autocomplete(Request $request)
 {
-    $term = $request->get('term');
-    $results = Invoice::where('invoice_no', 'like', '%' . $term . '%')
-                      ->limit(10)
-                      ->pluck('invoice_no');
+    $dealer = Auth::guard('dealer')->user();
+
+    $results = Invoice::where('dealer_id', $dealer->id)
+        ->where('invoice_no', 'like', '%' . $request->term . '%')
+        ->pluck('invoice_no');
 
     return response()->json($results);
 }
+
+
 public function searchContacts(Request $request)
 {
     $query = $request->query('q');
@@ -230,6 +261,46 @@ public function preview($invoice_no)
     return view('invoices.preview', compact('invoice'));
 }
 
+
+public function searchDealerParts(Request $request)
+{
+    $dealer = Auth::guard('dealer')->user();
+    if (!$dealer) {
+        return response()->json([], 401);
+    }
+
+    $dealerId = $dealer->id;
+    $query = $request->q;
+
+    // Step 1: Get global_part_ids ONLY used by this dealer in GRNItems
+    $dealerPartIds = GRNItem::where('dealer_id', $dealerId)
+        ->pluck('global_part_id')
+        ->unique()
+        ->toArray();
+        
+
+    // 🛠️ DEBUG LOG: Just to verify what IDs you're getting
+    // dd($dealerPartIds);
+
+    // Step 2: Only return GlobalParts with those IDs and matching the query
+    $matchingParts = GlobalPart::whereIn('id', $dealerPartIds)
+        ->where(function ($q) use ($query) {
+            $q->where('part_number', 'like', "%{$query}%")
+              ->orWhere('part_name', 'like', "%{$query}%");
+        })
+        ->get();
+
+    // Step 3: Format output
+    $result = $matchingParts->map(function ($part) {
+        return [
+            'part_number' => $part->part_number,
+            'part_name' => $part->part_name,
+            'price' => $part->price,
+        ];
+    });
+
+    return response()->json($result);
+}
 
 
     

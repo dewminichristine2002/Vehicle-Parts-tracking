@@ -36,10 +36,11 @@ return [
     */
 
     'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'users',
-        ],
+
+        'dealer' => [
+        'driver' => 'session',
+        'provider' => 'dealers',
+    ],
     ],
 
     /*
@@ -60,9 +61,9 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'dealers' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => App\Models\Dealer::class,
         ],
 
         // 'users' => [

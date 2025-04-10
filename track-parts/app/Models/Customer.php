@@ -16,10 +16,17 @@ class Customer extends Model
     protected $fillable = [
         'contact_number',
         'customer_name',
+        'dealer_id',
     ];
 
     public function vehicles()
     {
         return $this->hasMany(CustomerVehicle::class, 'contact_number', 'contact_number');
     }
+
+    public function dealer()
+{
+    return $this->belongsTo(Dealer::class);
+}
+
 }
