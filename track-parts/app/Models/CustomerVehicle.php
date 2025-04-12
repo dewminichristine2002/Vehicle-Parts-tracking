@@ -17,6 +17,7 @@ class CustomerVehicle extends Model
     protected $fillable = [
         'contact_number',
         'vehicle_number',
+        'dealer_id',
     ];
 
     public function customer()

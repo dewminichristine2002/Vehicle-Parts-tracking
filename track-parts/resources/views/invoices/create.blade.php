@@ -32,7 +32,9 @@
 
     <div id="contactSuggestions" style="border: 1px solid #ccc; display: none;"></div>
 
-<input type="text" name="customer_name" id="customer_name" placeholder="Customer Name" required>
+    <input type="text" name="customer_name" id="customer_name"
+       placeholder="Customer Name" required
+       autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
 
 <input type="text" name="vehicle_number" id="vehicle_number" placeholder="Vehicle Number" required autocomplete="off">
 <div id="vehicleSuggestions" style="border: 1px solid #ccc; display: none;"></div>
@@ -221,7 +223,7 @@ function calculateTotal(input) {
         const table = document.querySelector('#costs-table tbody');
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="text" name="other_costs[${costIndex}][description]" required></td>
+            <td><input type="text" name="other_costs[${costIndex}][description]" required autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></td>
             <td><input type="number" name="other_costs[${costIndex}][price]" step="0.01" min="0" value="0" onchange="calculateGrandTotal()" required></td>
             <td><button type="button" onclick="this.closest('tr').remove(); calculateGrandTotal();">Remove</button></td>
         `;
@@ -372,13 +374,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         suggestionBox.style.display = 'block';
                         data.forEach(item => {
                             const div = document.createElement('div');
-                            div.textContent = item.contact_number + ' - ' + item.customer_name;
+                            div.textContent = `${item.contact_number} - ${item.customer_name} (${item.vehicle_number || 'No Vehicle'})`;
+
                             div.style.padding = '5px';
                             div.style.cursor = 'pointer';
                             div.onclick = () => {
                                 contactInput.value = item.contact_number;
                                 document.getElementById('customer_name').value = item.customer_name;
-                                document.getElementById('vehicle_number').value = item.vehicle_number;
+                                document.getElementById('vehicle_number').value = item.vehicle_number || ''; // updated key
                                 suggestionBox.innerHTML = '';
                                 suggestionBox.style.display = 'none';
                             };
@@ -498,6 +501,15 @@ document.addEventListener('click', function(e) {
         box.style.display = 'none';
     }
 });
+
+//capitalize the first letter
+document.getElementById('customer_name').addEventListener('input', function () {
+    let val = this.value.toLowerCase(); // Start with all lowercase
+    this.value = val.replace(/\b\w/g, function (char) {
+        return char.toUpperCase();
+    });
+});
+
 
 
 

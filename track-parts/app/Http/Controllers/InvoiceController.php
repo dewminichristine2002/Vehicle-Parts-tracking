@@ -75,7 +75,9 @@ class InvoiceController extends Controller
         DB::beginTransaction();
     
         try {
-            $existingCustomer = Customer::where('contact_number', $request->contact_number)->first();
+            $existingCustomer = Customer::where('contact_number', $request->contact_number)
+                            ->where('dealer_id', $dealerId)
+                            ->first();
 
             if (!$existingCustomer) {
                 // Insert into customers table
@@ -86,24 +88,32 @@ class InvoiceController extends Controller
                 ]);
             }
     
-        // Find the vehicle by vehicle number, regardless of current owner
-            $existingVehicle = CustomerVehicle::where('vehicle_number', $request->vehicle_number)->first();
+// Check if the vehicle exists under this dealer but with a different owner (ownership change case)
+$sameVehicleDiffOwner = CustomerVehicle::where('dealer_id', $dealerId)
+    ->where('vehicle_number', $request->vehicle_number)
+    ->where('contact_number', '!=', $request->contact_number)
+    ->first();
 
-            if ($existingVehicle) {
-            //  If this vehicle belongs to someone else, remove that old ownership
-                if ($existingVehicle->contact_number !== $request->contact_number) {
-                    $existingVehicle->delete();
-                 }
-             }
+if ($sameVehicleDiffOwner) {
+    // Delete the old row (ownership change)
+    $sameVehicleDiffOwner->delete();
+}
 
-        // Register or re-register vehicle to the current customer
-        CustomerVehicle::updateOrCreate(
-        [
+// Now check if the new vehicle+owner+dealer record already exists
+$alreadyExists = CustomerVehicle::where('dealer_id', $dealerId)
+    ->where('vehicle_number', $request->vehicle_number)
+    ->where('contact_number', $request->contact_number)
+    ->first();
+
+if (!$alreadyExists) {
+    // Insert the new ownership or new entry
+    CustomerVehicle::create([
+        'dealer_id'      => $dealerId,
         'vehicle_number' => $request->vehicle_number,
         'contact_number' => $request->contact_number,
-        ],
-    
-        );
+    ]);
+}
+
 
             
             // 🔹 Create Invoice
@@ -136,6 +146,7 @@ class InvoiceController extends Controller
                     'invoice_no' => $invoice->invoice_no,
                     'description' => $cost['description'],
                     'price' => $cost['price'],
+                    'dealer_id' => $dealerId,
                 ]);
             }
     
@@ -151,13 +162,13 @@ class InvoiceController extends Controller
     
     public function index(Request $request)
 {
-    $dealer = Auth::guard('dealer')->user(); // ✅ Get the logged-in dealer
+    $dealer = Auth::guard('dealer')->user(); // Get the logged-in dealer
 
     if (!$dealer) {
         return redirect()->route('login')->with('error', 'Unauthorized');
     }
 
-    $query = Invoice::where('dealer_id', $dealer->id); // ✅ Only dealer's invoices
+    $query = Invoice::where('dealer_id', $dealer->id); //  Only dealer's invoices
 
     if ($request->filled('invoice_no')) {
         $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
@@ -185,39 +196,56 @@ public function autocomplete(Request $request)
 }
 
 
+
+
 public function searchContacts(Request $request)
 {
-    $query = $request->query('q');
+    $dealerId = Auth::guard('dealer')->id();
+    $query = $request->q;
 
-    $customers = Customer::where('contact_number', 'like', $query . '%')->get();
+    $contacts = DB::table('customers')
+        ->leftJoin('customer_vehicles', function ($join) use ($dealerId) {
+            $join->on('customers.contact_number', '=', 'customer_vehicles.contact_number')
+                 ->where('customer_vehicles.dealer_id', '=', $dealerId);
+        })
+        ->select(
+            'customers.contact_number',
+            'customers.customer_name',
+            'customer_vehicles.vehicle_number'
+        )
+        ->where('customers.dealer_id', $dealerId)
+        ->where(function ($q) use ($query) {
+            $q->where('customers.contact_number', 'like', "%{$query}%")
+              ->orWhere('customers.customer_name', 'like', "%{$query}%");
+        })
+        ->get();
 
-    $results = [];
-
-    foreach ($customers as $customer) {
-        $vehicle = CustomerVehicle::where('contact_number', $customer->contact_number)->first();
-
-        $results[] = [
-            'contact_number' => $customer->contact_number,
-            'customer_name' => $customer->customer_name,
-            'vehicle_number' => $vehicle?->vehicle_number ?? '',
-        ];
-    }
-
-    return response()->json($results);
+    return response()->json($contacts);
 }
+
+
 
 public function searchVehicle(Request $request)
 {
+    $dealerId = Auth::guard('dealer')->id(); // Get the logged-in dealer ID
     $query = $request->query('q');
-    $vehicles = CustomerVehicle::where('vehicle_number', 'like', $query . '%')->get();
+
+    $vehicles = CustomerVehicle::where('dealer_id', $dealerId)
+        ->where('vehicle_number', 'like', $query . '%')
+        ->get();
 
     $results = [];
+
     foreach ($vehicles as $vehicle) {
-        $customer = Customer::where('contact_number', $vehicle->contact_number)->first();
+        // Only get the customer of this dealer
+        $customer = Customer::where('dealer_id', $dealerId)
+            ->where('contact_number', $vehicle->contact_number)
+            ->first();
+
         $results[] = [
-            'vehicle_number' => $vehicle->vehicle_number,
-            'contact_number' => $vehicle->contact_number,
-            'customer_name' => $customer ? $customer->customer_name : '',
+            'vehicle_number'  => $vehicle->vehicle_number,
+            'contact_number'  => $vehicle->contact_number,
+            'customer_name'   => $customer ? $customer->customer_name : '',
         ];
     }
 
@@ -228,8 +256,10 @@ public function searchVehicle(Request $request)
 public function otherCostSuggestions(Request $request)
 {
     $q = $request->q;
+    $dealerId = Auth::guard('dealer')->id(); // Get logged-in dealer's ID
 
     $suggestions = DB::table('other_costs')
+        ->where('dealer_id', $dealerId)
         ->where('description', 'like', "%$q%")
         ->select('description', 'price')
         ->distinct()
@@ -240,7 +270,6 @@ public function otherCostSuggestions(Request $request)
 }
 
 
-   
 
     public function download($invoice_no)
 {
@@ -279,7 +308,7 @@ public function searchDealerParts(Request $request)
         ->toArray();
         
 
-    // 🛠️ DEBUG LOG: Just to verify what IDs you're getting
+    //  DEBUG LOG: Just to verify what IDs you're getting
     // dd($dealerPartIds);
 
     // Step 2: Only return GlobalParts with those IDs and matching the query

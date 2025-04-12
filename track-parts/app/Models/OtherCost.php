@@ -14,6 +14,7 @@ class OtherCost extends Model
         'description',
         'price',
         'invoice_no',
+        'dealer_id'
     ];
 
     public function invoice(): BelongsTo

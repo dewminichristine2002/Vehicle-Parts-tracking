@@ -25,12 +25,6 @@ Route::get('/other-costs/suggestions', [InvoiceController::class, 'otherCostSugg
 Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
 Route::get('/customers/search', [CustomerController::class, 'search'])->name('customers.search');
 
-/*
-Route::get('/customers/{contact_number}/edit', [CustomerController::class, 'edit'])->name('customers.edit');
-Route::put('/customers/{contact_number}', [CustomerController::class, 'update'])->name('customers.update');
-*/
-
-
 
 //invoice preview
 Route::get('/invoices/{invoice_no}/preview', [InvoiceController::class, 'preview']);
