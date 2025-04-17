@@ -14,6 +14,8 @@ use App\Models\DealerAuthController;
 use Illuminate\Support\Facades\Auth;
 use App\Models\GRNItem;
 use App\Models\GlobalPart;
+use App\Models\LocalStock;
+
 
 
 class InvoiceController extends Controller
@@ -50,7 +52,7 @@ class InvoiceController extends Controller
             }),
         ]);
 
-    
+        
     
         // Validation
         $request->validate([
@@ -88,35 +90,35 @@ class InvoiceController extends Controller
                 ]);
             }
     
-// Check if the vehicle exists under this dealer but with a different owner (ownership change case)
-$sameVehicleDiffOwner = CustomerVehicle::where('dealer_id', $dealerId)
-    ->where('vehicle_number', $request->vehicle_number)
-    ->where('contact_number', '!=', $request->contact_number)
-    ->first();
+            // Check if the vehicle exists under this dealer but with a different owner (ownership change case)
+            $sameVehicleDiffOwner = CustomerVehicle::where('dealer_id', $dealerId)
+                ->where('vehicle_number', $request->vehicle_number)
+                ->where('contact_number', '!=', $request->contact_number)
+                ->first();
 
-if ($sameVehicleDiffOwner) {
-    // Delete the old row (ownership change)
-    $sameVehicleDiffOwner->delete();
-}
+            if ($sameVehicleDiffOwner) {
+                // Delete the old row (ownership change)
+                $sameVehicleDiffOwner->delete();
+            }
 
-// Now check if the new vehicle+owner+dealer record already exists
-$alreadyExists = CustomerVehicle::where('dealer_id', $dealerId)
-    ->where('vehicle_number', $request->vehicle_number)
-    ->where('contact_number', $request->contact_number)
-    ->first();
+            // Now check if the new vehicle+owner+dealer record already exists
+            $alreadyExists = CustomerVehicle::where('dealer_id', $dealerId)
+                ->where('vehicle_number', $request->vehicle_number)
+                ->where('contact_number', $request->contact_number)
+                ->first();
 
-if (!$alreadyExists) {
-    // Insert the new ownership or new entry
-    CustomerVehicle::create([
-        'dealer_id'      => $dealerId,
-        'vehicle_number' => $request->vehicle_number,
-        'contact_number' => $request->contact_number,
-    ]);
-}
+            if (!$alreadyExists) {
+                // Insert the new ownership or new entry
+                CustomerVehicle::create([
+                    'dealer_id'      => $dealerId,
+                    'vehicle_number' => $request->vehicle_number,
+                    'contact_number' => $request->contact_number,
+                ]);
+            }
 
 
             
-            // 🔹 Create Invoice
+            //  Create Invoice
             $invoice = Invoice::create([
                 'invoice_no'     => $request->invoice_no,
                 'customer_name'  => $request->customer_name,
@@ -127,7 +129,7 @@ if (!$alreadyExists) {
                 'dealer_id'      => $dealerId,
             ]);
     
-            // 🔹 Store sold parts
+            //  Store sold parts
             foreach ($request->parts as $part) {
                 SoldPart::create([
                     'invoice_no' => $invoice->invoice_no,
@@ -139,8 +141,11 @@ if (!$alreadyExists) {
                     'total' => $part['total'],
                 ]);
             }
+
+            // Update stock
+            $this->updateLocalStock($dealerId, $part['part_number'], $part['quantity']);
     
-            // 🔹 Store other costs
+            //  Store other costs
             foreach ($request->other_costs ?? [] as $cost) {
                 OtherCost::create([
                     'invoice_no' => $invoice->invoice_no,
@@ -330,6 +335,31 @@ public function searchDealerParts(Request $request)
 
     return response()->json($result);
 }
+
+private function updateLocalStock($dealerId, $partNumber, $quantity)
+{
+    $globalPart = \App\Models\GlobalPart::where('part_number', $partNumber)->first();
+
+    if (!$globalPart) {
+        throw new \Exception("Part not found: $partNumber");
+    }
+
+    $localStock = \App\Models\LocalStock::where('dealer_id', $dealerId)
+                                        ->where('global_part_id', $globalPart->id)
+                                        ->first();
+
+    if (!$localStock) {
+        throw new \Exception("Local stock not found for part: $partNumber");
+    }
+
+    if ($localStock->quantity < $quantity) {
+        throw new \Exception("Insufficient stock for part: $partNumber");
+    }
+
+    $localStock->quantity -= $quantity;
+    $localStock->save();
+}
+
 
 
     

@@ -247,6 +247,27 @@ function calculateTotal(input) {
     }
 
     function showConfirmation() {
+
+        const partRows = document.querySelectorAll('#parts-table tbody tr');
+let hasValidPart = false;
+
+for (let row of partRows) {
+    const partNumber = row.querySelector('input[name*="[part_number]"]')?.value.trim();
+    const qty = parseInt(row.querySelector('input[name*="[quantity]"]')?.value || 0);
+
+    if (partNumber && qty > 0) {
+        hasValidPart = true;
+        break;
+    }
+}
+
+if (!hasValidPart) {
+    alert("Please add at least one valid part with a part number and quantity.");
+    return;
+}
+
+
+
     calculateGrandTotal();
     const content = document.getElementById('confirmation-content');
 
