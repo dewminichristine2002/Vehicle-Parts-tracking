@@ -1,0 +1,504 @@
+body { font-family: Arial, sans-serif; }
+        
+#invoice-form {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.5rem;
+    background-color: #ffffff;
+   
+    margin-top: 170px; 
+  }
+   
+       
+
+        /* Rounded and colored header */
+#parts-table thead tr {
+    background-color: #e71c23;
+    color: white;
+    font-weight: bold;
+    border-radius: 20px;
+}
+
+#parts-table thead th {
+    padding: 10px;
+    text-align: center;
+}
+
+/* Rounded row styling */
+#parts-table tbody tr {
+    background-color: #fce2e2;
+    border-radius: 20px;
+    margin-bottom: 10px;
+}
+
+#parts-table tbody td {
+    padding: 8px;
+    vertical-align: middle;
+    text-align: center;
+    color: #666;
+}
+
+/* Trash icon button */
+.remove-btn {
+    border: none;
+    background: none;
+    padding: 0;
+}
+
+.remove-btn i {
+    color: #e71c23;
+    font-size: 1.2rem;
+}
+
+/* Smooth table corners (optional) */
+#parts-table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    width: 100%;
+}
+/* Style for the Other Costs table header */
+#costs-table thead tr {
+    background-color: #1e1a1a;
+    color: white;
+    font-weight: bold;
+    border-radius: 20px;
+}
+
+#costs-table thead th {
+    padding: 10px;
+    text-align: center;
+    border: none;
+}
+
+/* Style for the Other Costs table rows */
+#costs-table tbody tr {
+    background-color: #8d7f7f;
+    border-radius: 20px;
+}
+
+#costs-table tbody td {
+    padding: 8px;
+    vertical-align: middle;
+    text-align: center;
+    color: #5e5e5e;
+}
+
+/* Remove button with icon */
+.remove-cost-btn {
+    border: none;
+    background: none;
+    padding: 0;
+}
+
+.remove-cost-btn i {
+    color: red;
+    font-size: 1.2rem;
+}
+
+/* Table spacing for rounded rows */
+#costs-table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    width: 100%;
+}
+.add-btn {
+    background: none;
+    border: none;
+    color: #0f9d58; /* Google-like green */
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .add-btn i {
+    font-size: 1.2rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .form-grid input,
+  .form-grid select {
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Shared style for contact, vehicle, and model suggestion dropdowns */
+#contactSuggestions,
+#vehicleSuggestions,
+#vehicle-suggestions {
+  position: absolute;
+  background: white;
+
+  border-radius: 6px;
+  margin-top: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+#contactSuggestions div,
+#vehicleSuggestions div,
+#vehicle-suggestions .suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#contactSuggestions div:hover,
+#vehicleSuggestions div:hover,
+#vehicle-suggestions .suggestion-item:hover {
+  background-color: #f2f2f2;
+}
+.grand-total-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 30px;
+    font-weight: bold;
+  }
+  
+  .grand-total-container label {
+    font-size: 1rem;
+  }
+  
+  .grand-total-container input {
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    min-width: 150px;
+    text-align: right;
+    background-color: #fff;
+  }
+
+  .preview-btn {
+    background-color: #126F26;
+    color: white;
+    font-size: 1.5rem;
+    padding: 0.5rem 2rem;
+    border-radius: 20px;
+    border: none;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .preview-btn:hover {
+    background-color: #0a6f21;
+    box-shadow: 2px 6px 12px rgba(0, 0, 0, 0.25);
+  }
+  .preview-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+  }
+
+  #parts-table tbody tr td:first-child,
+  #costs-table tbody tr td:first-child {
+    border-top-left-radius: 50px;
+    border-bottom-left-radius: 50px;
+    overflow: hidden;
+   
+  }
+  
+  #parts-table tbody tr td:last-child,
+  #costs-table tbody tr td:last-child {
+    border-top-right-radius: 50px;
+    border-bottom-right-radius: 50px;
+    overflow: hidden;
+  }
+  /* For fully rounded header (start and end corners) */
+#parts-table thead th:first-child,
+#costs-table thead th:first-child {
+  border-top-left-radius: 50px;
+  border-bottom-left-radius: 50px;
+}
+
+#parts-table thead th:last-child,
+#costs-table thead th:last-child {
+  border-top-right-radius: 50px;
+  border-bottom-right-radius: 50px;
+}
+
+/* Ensure there's spacing so the corners are visible */
+#parts-table,
+#costs-table {
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+/* Make input fields blend into the row background */
+#parts-table tbody input,
+#costs-table tbody input {
+  background-color: transparent;
+  border: none;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  color: #333;
+  width: 100%;
+  outline: none;
+  box-shadow: none;
+  text-align: center;
+}
+
+/* Optional: add placeholder color to match */
+#parts-table tbody input::placeholder{
+    color: #888;
+    opacity: 0.7;
+}
+#costs-table tbody input::placeholder {
+  color: #ffffff;
+  opacity: 0.7;
+}
+
+
+    .modal-btn {
+        color: white;
+        border-radius: 20px;
+        height: 50px;
+        width: 120px;
+        margin: 0 10px;
+        border: none;
+        font-weight: bold;
+        transition: all 0.2s ease;
+    }
+    
+    .modal-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+    }
+  
+
+/* Confirmation Popup Table Headers */
+#confirmation-content .sold-parts-header {
+    background-color: #e71c23 !important; /* Red header for Sold Parts */
+    color: white !important;
+    border-radius: 30px;
+}
+
+#confirmation-content .other-costs-header {
+    background-color: #1e1a1a !important; /* Black header for Other Costs */
+    color: white !important;
+    border-radius: 30px;
+}
+
+/* Rounded corners for first and last th elements */
+#confirmation-content .sold-parts-header th:first-child,
+#confirmation-content .other-costs-header th:first-child {
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+}
+
+#confirmation-content .sold-parts-header th:last-child,
+#confirmation-content .other-costs-header th:last-child {
+    border-top-right-radius: 30px;
+    border-bottom-right-radius: 30px;
+}
+
+/* Table header cell padding */
+#confirmation-content .sold-parts-header th,
+#confirmation-content .other-costs-header th {
+    padding: 10px;
+    text-align: center;
+}
+
+/* Update these styles in your invoice.css file */
+
+/* Confirmation Popup - Sold Parts Table */
+#confirmation-content table:first-of-type tbody tr:nth-child(odd) {
+    background-color: #fce2e2 !important; /* Light red for odd rows */
+    border-radius: 30px;
+}
+
+#confirmation-content table:first-of-type tbody tr:nth-child(even) {
+    background-color: #ffffff !important; /* White for even rows */
+    border-radius: 30px;
+}
+
+/* Confirmation Popup - Other Costs Table */
+#confirmation-content table:last-of-type tbody tr:nth-child(odd) {
+    background-color: #8d7f7f !important; /* Dark gray for odd rows */
+    border-radius: 30px;
+    color: white !important;
+}
+
+#confirmation-content table:last-of-type tbody tr:nth-child(even) {
+    background-color: #a89b9b !important; /* Lighter gray for even rows */
+    border-radius: 30px;
+    color: white !important;
+}
+
+/* Ensure text color in Other Costs table */
+#confirmation-content table:last-of-type tbody tr td {
+    color: white !important;
+}
+
+/* Remove any default borders/spacing */
+#confirmation-content table {
+    border-collapse: separate !important;
+    border-spacing: 0 8px !important;
+    border: none !important;
+}
+
+/* Rounded corners for all cells */
+#confirmation-content table tr td:first-child {
+    border-top-left-radius: 30px !important;
+    border-bottom-left-radius: 30px !important;
+}
+
+#confirmation-content table tr td:last-child {
+    border-top-right-radius: 30px !important;
+    border-bottom-right-radius: 30px !important;
+}
+    
+    /* Add this to your invoice.css file */
+
+/* Remove border around tables in confirmation popup */
+#confirmation-content table {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Add spacing between tables */
+#confirmation-content h4 {
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+/* Improve table row styling */
+#confirmation-content table tbody tr {
+    border-radius: 30px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    display: table-row; /* Ensure proper table layout */
+}
+
+#confirmation-content #parts-table tbody tr {
+    background-color: #fce2e2;
+}
+
+#confirmation-content #costs-table tbody tr {
+    background-color: #8d7f7f;
+    color: white;
+}
+
+/* Remove cell borders and improve spacing */
+#confirmation-content table td {
+    border: none !important;
+    padding: 12px 15px !important;
+}
+
+/* Rounded corners for first and last cells */
+#confirmation-content table tr td:first-child {
+    border-top-left-radius: 30px !important;
+    border-bottom-left-radius: 30px !important;
+}
+
+#confirmation-content table tr td:last-child {
+    border-top-right-radius: 30px !important;
+    border-bottom-right-radius: 30px !important;
+}
+
+/* Table spacing adjustments */
+#confirmation-content table {
+    margin-bottom: 30px;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    width: 100%;
+}
+    
+    #confirmation-content p {
+        margin-bottom: 10px;
+    }
+    
+    #confirmation-content strong {
+        color: #231F20;
+    }
+
+     .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+  
+  .col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+  
+  .customer-info, .vehicle-info {
+    background:  white;
+    padding: 10px;
+   
+    height: 100%;
+  }
+  
+  .customer-info p, .vehicle-info p {
+    margin-bottom: 4px;
+  }
+      /* Add this to your existing styles */
+    #confirmation-popup .header {
+        position: relative;
+        height: 110px;
+        width: 100%;
+        background: none;
+       
+        
+    }
+    
+    #confirmation-popup .header h4 {
+        color: white !important;
+        z-index: 2;
+    }
+    
+    #confirmation-popup .header img {
+        z-index: 1;
+    }
+
+    .suggestion-box {
+    position: absolute;
+    background: white;
+    border: 1px solid #4d4d4d;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.suggestion-box div {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.suggestion-box div:hover {
+    background-color: #f5f5f5;
+}
+
+.suggestion-box div:last-child {
+    border-bottom: none;
+}
